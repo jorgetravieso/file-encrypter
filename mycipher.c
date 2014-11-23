@@ -1,4 +1,6 @@
 
+//TODO change int [] to 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,12 +43,12 @@ void left_shift_1(int * bits, int low, int high);
 void left_shift_2(int * bits, int low, int high);
 void int_to_bitset(int value, int * bitset, int N);
 int bitset_to_int(int * bitset, int N);
-void IP_function(int * input);
+void IP_function(int * input, int * output);
 void IP_INV_function(int * input);
 void raise_error(char * msg) { perror(msg); exit(-1); } 
 void swap(int * array, int i , int j);
 void S_function(int * input,int low, int high, const int S[4][4]  , int * S_out );
-void F_mapping(int * input, int * sk, int low, int high, int * output);
+void F_mapping(int * input, int * sk, int low, int * output);
 void f_function(int * input, int * sk, int * output);		//4bit
 void SW_function(int * input);
 int encrypt(char c);
@@ -60,10 +62,10 @@ int main (int argc, char ** argv)
 	printf("%d\n", bitset_to_int(arr,4));
 
 
-	char c = 'h';   	
-	int K [] = {1,0,1,0,0,0,0,0,1,0};
+	char c = '(';   	
+	//int K [] = {1,0,1,0,0,0,0,0,1,0};
+	int K [] = {1,1,0,0,0,1,1,1,1,0};
 	gen_keys(K);	
-
 	printf("char = %c\n", c);
 	int cipher = encrypt(c);
 	printf("encrypt() -> %c\n", cipher);
@@ -76,7 +78,7 @@ int main (int argc, char ** argv)
 
 }
 
-
+//GOOD
 void gen_keys(int * K)
 {
 	
@@ -107,7 +109,7 @@ void gen_keys(int * K)
 
 
 }
-
+//GOOD
 void left_shift_1(int * bits, int low, int high)
 {
 	int first = bits[low];
@@ -117,33 +119,34 @@ void left_shift_1(int * bits, int low, int high)
 	}
 	bits[--i] = first;
 }
-
+//GOOD
 void left_shift_2(int * bits, int low, int high)
 {
 	left_shift_1(bits,low,high);
 	left_shift_1(bits,low,high);
 }
-
-void IP_function(int * input)
+//GOOD
+void IP_function(int * input, int * output)
 {
 	int i;
 	for(i = 0; i < 8; i++){								//IP permute
-		IP_Output[i] = input[ IP[i] - 1];
+		output[i] = input[ IP[i] - 1];
 	}
-	printf("My IP: ");
-	print_array(IP_Output);
+	//printf("My IP: ");
+	//print_array(IP_Output);
 }
+//GOOD
 void IP_INV_function(int * input)
 {
 	int i;
 	for(i = 0; i < 8; i++){								//IP permute
 		IP_Inv_Output[i] = input[ IP_INV[i] - 1];
 	}
-	printf("My IP_INV: ");
-	print_array(IP_Inv_Output);
+	//printf("My IP_INV: ");
+	//print_array(IP_Inv_Output);
 }
 
-
+//GOOD
 void print_array(int * array)
 {
 	int i;
@@ -152,6 +155,7 @@ void print_array(int * array)
 	}
 	printf("\n");
 }
+//GOOD
 void swap(int * array, int i , int j)
 {
 	int temp = array[i];
@@ -159,6 +163,7 @@ void swap(int * array, int i , int j)
 	array[j] = temp;
 }	
 
+//GOOD
 void int_to_bitset(int value, int * bitset, int N)
 {
 	if(value < 0){
@@ -187,28 +192,58 @@ int bitset_to_int(int * bitset, int N)
 }
 
 int encrypt(char c){							//pass output as arg to the functions;
+	
+	printf("%s\n", "\nencrypting ....");
 	int ciphertext[8];
 	int_to_bitset(c,ciphertext,8);				//will convert the int value to a bitset
-	printf("BitSet: ");
+	
+	printf("INPUT: ");
 	print_array(ciphertext);					
+	
+	IP_function(ciphertext, IP_Output);
 
-	IP_function(ciphertext);
+	printf("IP(): ");
+	print_array(IP_Output);	
+
+	//THE LEFT SIDE OF f is not good by one
 	f_function(IP_Output, K1, f1_Function_Output);
 
-	printf("After f(): ");
-	print_array(ciphertext);				
+
+	printf("After f1(): ");
+	print_array(f1_Function_Output);				
 
 	SW_function(f1_Function_Output);
+
+	printf("After SW(): ");
+	print_array(f1_Function_Output);	
+
+
 	f_function(f1_Function_Output, K2, f2_Function_Output);
+
+	printf("After f2(): ");
+	print_array(f2_Function_Output);	
+
+
 	IP_INV_function(f2_Function_Output);
+
+	printf("After IP-1(): ");
+	print_array(IP_Inv_Output);	
+
+
+
 	return bitset_to_int(IP_Inv_Output,8);
 }
 int decrypt(char c){
+	
+	printf("%s\n", "\ndecrypting ....");
+
 	int text[8];
 	int_to_bitset(c,text,8);					//will convert the int value to a bitset
+	
 	printf("BitSet: ");
-	print_array(ciphertext);					
-	IP_function(text);
+	print_array(text);					
+	
+	IP_function(text,IP_Output);
 	f_function(IP_Output, K2, f2_Function_Output);
 	SW_function(f2_Function_Output);
 	f_function(f2_Function_Output, K1, f1_Function_Output);
@@ -217,8 +252,11 @@ int decrypt(char c){
 }
 
 
-void SW_function(int * input){
-	swap(input,0,3);
+void SW_function(int * input){						//TO-CHECK
+	int i= 0;
+	for(i; i < 4; i++){
+		swap(input, i,i+4);
+	}
 }
 
 
@@ -228,7 +266,7 @@ void f_function(int * input, int * sk, int * output)
 	//fK(L, R) = (L XOR F(R, SK), R)
 	//sk some key
 													//let L and R be the left and right 4 bits of input
-	F_mapping(input, sk, 4, 7, F_Mapping_Output);	//F(R, SK)
+	F_mapping(input, sk, 4, F_Mapping_Output);	//F(R, SK)
 	XOR(F_Mapping_Output, input, 4);				//L XOR F(R, SK) 		
 	int i;
 	for(i = 0; i < 4; i++)
@@ -238,12 +276,20 @@ void f_function(int * input, int * sk, int * output)
 
 }
 
-void F_mapping(int * input, int * sk, int low, int high, int * output){
+void F_mapping(int * input, int * sk, int low, int * output){
+	
+
 	int EP_Ouput[8];
 	int i;
+	printf("Before Ep(): ");
+	print_array(input);
 	for(i = 0; i < 8; i++){							//EP() expand and permute and XOR() to LEFT
-		EP_Ouput[i] = input[EP[i]-1] ^ sk[i];
-	}												
+		EP_Ouput[i] = input[low + EP[i]-1] ^ sk[i];
+		//printf("%d ", EP_Ouput[i]);
+	}
+	printf("After Ep(): ");
+	print_array(EP_Ouput);
+
 													//S0() and S1() boxes
 	S_function(EP_Ouput,0,3,S0,S0_out);
 	S_function(EP_Ouput,4,7,S1,S1_out);				//F() ---> SO() Union S1()  
@@ -253,6 +299,8 @@ void F_mapping(int * input, int * sk, int low, int high, int * output){
 	output[1] =  S1_out[1];
 	output[2] =  S1_out[0];
 	output[3] =  S0_out[0];
+	printf("%s", "F_mapping:");
+	print_array(output);
 }
 
 void S_function(int * input,int low, int high, const int S [4][4]  , int * S_out ){
@@ -261,7 +309,7 @@ void S_function(int * input,int low, int high, const int S [4][4]  , int * S_out
 	int i = bitset_to_int(i_arr,2);
 	int j = bitset_to_int(j_arr,2);
 	int val = S[i][j];
-	printf("val: %d\n", val);
+	//printf("val: %d\n", val);
 	int_to_bitset(val, S_out, 2);
 
 }
