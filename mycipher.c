@@ -51,8 +51,8 @@ void S_function(int * input,int low, int high, const int S[4][4]  , int * S_out 
 void F_mapping(int * input, int * sk, int low, int * output);
 void f_function(int * input, int * sk, int * output);		//4bit
 void SW_function(int * input);
-int encrypt(char c);
-int decrypt(char c);
+int encrypt(int c);
+int decrypt(int c);
 void XOR(int * a, int * b, int N);
 
 
@@ -68,8 +68,8 @@ int main (int argc, char ** argv)
 	gen_keys(K);	
 	printf("char = %c\n", c);
 	int cipher = encrypt(c);
-	printf("encrypt() -> %c\n", cipher);
-	printf("decrypt() -> %c\n", decrypt(cipher));
+	printf("encrypt() -> %d\n", cipher);
+	printf("decrypt() -> %d\n", decrypt(cipher));
 
 
 //	IP_INV_function(IP_Output);
@@ -191,7 +191,7 @@ int bitset_to_int(int * bitset, int N)
 	return value;
 }
 
-int encrypt(char c){							//pass output as arg to the functions;
+int encrypt(int c){							//pass output as arg to the functions;
 	
 	printf("%s\n", "\nencrypting ....");
 	int ciphertext[8];
@@ -233,15 +233,15 @@ int encrypt(char c){							//pass output as arg to the functions;
 
 	return bitset_to_int(IP_Inv_Output,8);
 }
-int decrypt(char c){
+int decrypt(int c){
 	
 	printf("%s\n", "\ndecrypting ....");
 
 	int text[8];
 	int_to_bitset(c,text,8);					//will convert the int value to a bitset
 	
-	printf("BitSet: ");
-	print_array(text);					
+	//printf("BitSet: ");
+	//print_array(text);					
 	
 	IP_function(text,IP_Output);
 	f_function(IP_Output, K2, f2_Function_Output);
@@ -249,6 +249,9 @@ int decrypt(char c){
 	f_function(f2_Function_Output, K1, f1_Function_Output);
 	IP_INV_function(f1_Function_Output);
 	return bitset_to_int(IP_Inv_Output,8);
+
+
+	//plaintext = IP-1 fK1 SW fK2 ( ( ( (IP(ciphertext)))))
 }
 
 
