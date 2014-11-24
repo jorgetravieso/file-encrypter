@@ -14,7 +14,6 @@ void left_shift_2(int * bits, int low, int high);
 void int_to_bitset(int value, int * bitset, int N);
 int bitset_to_int(int * bitset, int N);
 unsigned char bitset_to_char(int * input, int N);
-unsigned char bitset_to_char2(int * input, int N);
 void XOR(int * a, int * b, int N);
 void raise_error(char * msg);
 

@@ -257,29 +257,6 @@ unsigned char bitset_to_char(int * input, int N)
 	return bitset_to_int(input,8);
 }
 
-/*Method to get back unsigned char from bit-string*/
-unsigned char bitset_to_char2(int * input, int N)
-{
-	int i,j,in;
-	unsigned char ch=0;
-	if(N < 0 || N > 8){
-		raise_error("\nWRONG LENGTH STRING");
-	}
-	for(i=0;i<8;i++)
-	{
-		if(input[i]==1)
-		{
-			in=1;
-			for(j=1;j<8-i;j++)
-			{
-				in=in*2;
-			}
-			ch=ch+in;
-		}
-	}
-	return ch;
-}
-
 
 //GOOD
 void print_array(int * array)

@@ -5,18 +5,19 @@
 #include "sdes.h"
 //TODO change int [] to 
 
+#define BUFFER_SIZE  1024
 
-void fencrypt(FILE * in, FILE * out);
+void fencrypt(FILE * fpin, FILE * fpout);
 void fdecrypt(FILE * fpin, FILE * fpout);
- 
+
 int main (int argc, char ** argv)
 {
 
 	int K [] = {1,1,0,0,0,1,1,1,1,0};
 	gen_keys(K);
 
-	char * in_filename = "";// = "file1.txt";
-	char * out_filename = "";// = "file2.txt";	
+	char * in_filename = "";
+	char * out_filename = "";
 	FILE * fpout;
 	FILE * fpin;
 
@@ -36,9 +37,9 @@ int main (int argc, char ** argv)
 	}
 
 	fpin = fopen(in_filename, "r");
-	if(fpin == NULL) raise_error("the fpin file couldn't be processed. exiting...");
+	if(fpin == NULL) raise_error("the original_file couldn't be processed. exiting...");
 	fpout = fopen(out_filename, "w");
-	if(fpout == NULL) raise_error("the fpout file couldn't be processed. exiting...");
+	if(fpout == NULL) raise_error("the result_file file couldn't be processed. exiting...");
 
 	if(strncmp(argv[1],"-d", 2) == 0)
 		fdecrypt(fpin, fpout);
@@ -49,54 +50,44 @@ int main (int argc, char ** argv)
 	fclose(fpin);
 	fclose(fpout);
 
+}
 
 
-	//char c = '(';   	
-	//int K [] = {1,0,1,0,0,0,0,0,1,0};
-
-
-	//printf("char = %c\n", c);
-	//int cipher = encrypt(c);
-	//printf("encrypt() -> %d\n", cipher);
-	//printf("decrypt() -> %d\n", decrypt(cipher));
-
-
-//	IP_INV_function(IP_Output);
-	}
-
-	void fencrypt(FILE * fpin, FILE * fpout){
-		char buffer[1024];
-		int i, n = 0;
-		while(!feof( fpin )){
-			memset(buffer, 0, 1024);   
-			n = fread( buffer, 1024,1, fpin);
-			if( ferror( fpin ) ) raise_error("can't read from file");
-			printf("n:%d\n", n);
-			for(i = 0; i < 1024; i++){
-				if(buffer[i] == 0) break;
-				unsigned char in = buffer[i];
-				unsigned char out =  encrypt(in);
-				fwrite(&out,1,1,fpout);
-			}	
+void fencrypt(FILE * fpin, FILE * fpout)
+{
+	char buffer[BUFFER_SIZE];
+	int i, n = 0;
+	while (1){
+		n = fread(buffer, 1 , BUFFER_SIZE, fpin);
+        for(i = 0; i < n; i++){
+			//if(buffer[i] == 0) break;
+			unsigned char in = buffer[i];
+			unsigned char out =  encrypt(in);
+			fwrite(&out,1,1,fpout);
 		}
+		if(n != BUFFER_SIZE){
+			break;
+		}		
 	}
+}
 
-	void fdecrypt(FILE * fpin, FILE * fpout){
-		char buffer[1024];
-		int i, n = 0;
-		while(!feof( fpin )){
-			memset(buffer, 0, 1024);   
-			n = fread( buffer, 1024,1, fpin);
-			if( ferror( fpin ) ) raise_error("can't read from file");
-			printf("n:%d\n", n);
-			for(i = 0; i < 1024; i++){
-				if(buffer[i] == 0) break;
-				unsigned char in = buffer[i];
-				unsigned char out =  decrypt(in);
-				fwrite(&out,1,1,fpout);
-			}	
+void fdecrypt(FILE * fpin, FILE * fpout)
+{
+	char buffer[BUFFER_SIZE];
+	int i, n = 0;
+	while (1){
+		n = fread(buffer, 1 , BUFFER_SIZE, fpin);
+        for(i = 0; i < n; i++){
+			//if(buffer[i] == 0) break;
+			unsigned char in = buffer[i];
+			unsigned char out =  decrypt(in);
+			fwrite(&out,1,1,fpout);
 		}
+		if(n != BUFFER_SIZE){
+			break;
+		}	
 	}
+}
 
 
 
