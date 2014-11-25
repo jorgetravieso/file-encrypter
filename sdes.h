@@ -23,7 +23,7 @@ void raise_error(char * msg);
 /*************************************************************
 S-DES Algorithm Functions
 **************************************************************/
-void gen_keys(int * key);
+void gen_keys(int * key, int * IV);
 void IP_function(int * input, int * output);
 void IP_INV_function(int * input, int * output);
 void S_function(int * input,int low, int high, const int S[4][4]  , int * S_out );

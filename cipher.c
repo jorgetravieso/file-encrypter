@@ -14,7 +14,9 @@ int main (int argc, char ** argv)
 {
 
 	int K [] = {1,1,0,0,0,1,1,1,1,0};
-	gen_keys(K);
+	int IV [] = {1,1,0,1,1,0,1,1};
+
+	gen_keys(K, IV);
 
 	char * in_filename = "";
 	char * out_filename = "";

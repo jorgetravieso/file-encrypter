@@ -7,6 +7,8 @@
 #include "sdes.h"
 
 
+int IV[8];
+
 int K1[8];												//will contain the 1st key
 int K2[8];												//will contain the 2nd and final key			
 
@@ -40,34 +42,32 @@ int S1_out[2];
 
 
 //GOOD
-void gen_keys(int * K)
+void gen_keys(int * K , int aIV[])
 {
+
+
+	memcpy(IV,aIV, sizeof(int) * 8);						//copy the initial vector
+	memcpy(IP_Inv_Output,aIV, sizeof(int) * 8);				//in case of encryption the IP_Inv_Output will contain the results of every encryption
+															
 	
-	int permuted[10];									//will contain the results of the permutation with P10
+	int permuted[10];										//will contain the results of the permutation with P10
 
 	int i;
-	for(i = 0; i < 10; i++){							//P10() permute
+	for(i = 0; i < 10; i++){								//P10() permute
 		permuted[i] = K[P10[i]-1];
 	}
-	left_shift_1(permuted, 0, 4);						//apply circular LS-1 to the 5 lower and upper bits 
+	left_shift_1(permuted, 0, 4);							//apply circular LS-1 to the 5 lower and upper bits 
 	left_shift_1(permuted, 5, 9);							
 	
-	for(i = 0; i < 8; i++){								//P8() permute
+	for(i = 0; i < 8; i++){									//P8() permute
 		K1[i] = permuted[P8[i]-1];
 	}
-	//printf("K1: ");
-	//print_array(K1);
-
-	left_shift_2(permuted,0,4);							//apply circular LS-2 to the 4 lower and upper bits 
+	left_shift_2(permuted,0,4);								//apply circular LS-2 to the 4 lower and upper bits 
 	left_shift_2(permuted,5,9);
 
-	for(i = 0; i < 8; i++){								//generate the K2 from the K1 using P8()
+	for(i = 0; i < 8; i++){									//generate the K2 from the K1 using P8()
 		K2[i] = permuted[P8[i]-1];
 	}
-	//printf("K2: ");
-	//print_array(K2);
-
-
 
 }
 
@@ -75,87 +75,51 @@ void gen_keys(int * K)
 void IP_function(int * input, int * output)
 {
 	int i;
-	for(i = 0; i < 8; i++){								//IP permute
+	for(i = 0; i < 8; i++){									//IP permute
 		output[i] = input[ IP[i] - 1];
 	}
-	//printf("My IP: ");
-	//print_array(IP_Output);
 }
 //GOOD
 void IP_INV_function(int * input, int * output)
 {
 	int i;
-	for(i = 0; i < 8; i++){								//IP permute
+	for(i = 0; i < 8; i++){									//IP permute
 		output[i] = input[ IP_INV[i] - 1];
 	}
-	//printf("My IP_INV: ");
-	//print_array(IP_Inv_Output);
 }
 
 
 
 
 
-unsigned char encrypt(int c){								//pass output as arg to the functions;
+unsigned char encrypt(int c)								//pass output as arg to the functions;
+{								
 	
 	printf("%s\n", "\nencrypting ....");
-	int ciphertext[8];
-	int_to_bitset(c,ciphertext,8);				//will convert the int value to a bitset
-	
-	//printf("INPUT: ");
-	//print_array(ciphertext);					
-	
-	IP_function(ciphertext, IP_Output);
+	int plaintext[8];										//bitset of plaintext
+	int_to_bitset(c,plaintext,8);							//will convert the char to a bitset
+	XOR(plaintext,IP_Inv_Output,8);			 				//CBC the output of the previous call is used to XOR the plaintext
+	IP_function(plaintext, IP_Output);						//IP() initial permutation	
+	f_function(IP_Output, K1, f1_Function_Output);			//f1() function
+	SW_function(f1_Function_Output);						//SW() function (switch)	
+	f_function(f1_Function_Output, K2, f2_Function_Output);	//f2() function
+	IP_INV_function(f2_Function_Output,IP_Inv_Output);		//IP-1() function
+	return bitset_to_char(IP_Inv_Output,8);					//convert to char the bitset
 
-	//printf("IP(): ");
-	//print_array(IP_Output);	
-
-	//THE LEFT SIDE OF f is not good by one
-	f_function(IP_Output, K1, f1_Function_Output);
-
-
-	// printf("After f1(): ");
-	// print_array(f1_Function_Output);				
-
-	SW_function(f1_Function_Output);
-
-	// printf("After SW(): ");
-	// print_array(f1_Function_Output);	
-
-
-	f_function(f1_Function_Output, K2, f2_Function_Output);
-
-	// printf("After f2(): ");
-	// print_array(f2_Function_Output);	
-
-
-	IP_INV_function(f2_Function_Output,IP_Inv_Output);
-
-	// printf("After IP-1(): ");
-	// print_array(IP_Inv_Output);	
-
-
-	return bitset_to_char(IP_Inv_Output,8);
-	//return bitset_to_int(IP_Inv_Output,8);
 }
 unsigned char decrypt(int c){
 	
 	printf("%s\n", "\ndecrypting ....");
-
-	int text[8];
-	int_to_bitset(c,text,8);					//will convert the int value to a bitset
-	
-	//printf("BitSet: ");
-	//print_array(text);					
-	
-	IP_function(text,IP_Output);
+	int ciphertext[8];
+	int_to_bitset(c,ciphertext,8);							//will convert the int value to a bitset
+	IP_function(ciphertext,IP_Output);						//
 	f_function(IP_Output, K2, f2_Function_Output);
 	SW_function(f2_Function_Output);
 	f_function(f2_Function_Output, K1, f1_Function_Output);
 	IP_INV_function(f1_Function_Output,IP_Inv_Output);
+	XOR(IP_Inv_Output,IV, 8);
+	memcpy(IV, ciphertext, sizeof(int) * 8);
 	return bitset_to_char(IP_Inv_Output,8);
-	//return bitset_to_int(IP_Inv_Output,8);
-
 }
 
 
