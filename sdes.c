@@ -1,3 +1,14 @@
+/*
+Author: Jorge Travieso
+
+Implements the S-DES algorithm for encryption applying Cipher Block Chaining(CBC)
+
+Usage:
+
+Step 1: genkeys(K, IV) where K is a 10 bit initial key and IV is a 8 bit initialization vector
+Step 2: continously call encrypt() or decrypt() in a sequence of plaintext or chiphertext chars respectively
+
+*/
 
 
 #include <stdio.h>
@@ -6,35 +17,30 @@
 #include <math.h>
 #include "sdes.h"
 
-
-int IV[8];
-
-int K1[8];												//will contain the 1st key
-int K2[8];												//will contain the 2nd and final key			
-
+//Global S-DES Algorithm Specific Definition
+int IV[8];													//initial vector for CBC()
+int K1[8];													//will contain the 1st key
+int K2[8];													//will contain the 2nd and final key			
 const int P10 [] = {3, 5, 2, 7, 4, 10, 1, 9, 8, 6};
 const int P8 [] =  {6, 3, 7, 4, 8, 5, 10, 9};
 const int IP [] = {2, 6, 3, 1, 4, 8, 5, 7};
 const int IP_INV[] = {4, 1, 3, 5, 7, 2, 8, 6};
 const int EP[] = {4, 1, 2, 3, 2, 3, 4, 1 };
-
 const int S0[][4]  = {{1, 0, 3, 2},
-{3, 2, 1, 0},
-{0, 2, 1, 3},
-{3, 1, 3, 2}};
-
+					  {3, 2, 1, 0},
+					  {0, 2, 1, 3},
+					  {3, 1, 3, 2}};
 const int S1[][4]  = {{0, 1, 2, 3},
-{2, 0, 1, 3},
-{3, 0, 1, 0},
-{2, 1, 0, 3}};
+					  {2, 0, 1, 3},
+					  {3, 0, 1, 0},
+					  {2, 1, 0, 3}};
 
-
-
-int IP_Output[8];
-int IP_Inv_Output[8];
-int F_Mapping_Output[4];
-int f1_Function_Output[8];
-int f2_Function_Output[8];
+//Global output arrays for the S-DES algorithm functions
+int IP_out[8];
+int IP_inv_out[8];
+int F_mapping_out[4];
+int f1_out[8];
+int f2_out[8];
 int S0_out[2];
 int S1_out[2];
 
@@ -44,10 +50,8 @@ int S1_out[2];
 //GOOD
 void gen_keys(int * K , int aIV[])
 {
-
-
 	memcpy(IV,aIV, sizeof(int) * 8);						//copy the initial vector
-	memcpy(IP_Inv_Output,aIV, sizeof(int) * 8);				//in case of encryption the IP_Inv_Output will contain the results of every encryption
+	memcpy(IP_inv_out,aIV, sizeof(int) * 8);				//in case of encryption the IP_inv_out will contain the results of every encryption
 															
 	
 	int permuted[10];										//will contain the results of the permutation with P10
@@ -92,38 +96,37 @@ void IP_INV_function(int * input, int * output)
 
 
 
-unsigned char encrypt(int c)								//pass output as arg to the functions;
+unsigned char encrypt(int c)								
 {								
-	
-	printf("%s\n", "\nencrypting ....");
 	int plaintext[8];										//bitset of plaintext
 	int_to_bitset(c,plaintext,8);							//will convert the char to a bitset
-	XOR(plaintext,IP_Inv_Output,8);			 				//CBC the output of the previous call is used to XOR the plaintext
-	IP_function(plaintext, IP_Output);						//IP() initial permutation	
-	f_function(IP_Output, K1, f1_Function_Output);			//f1() function
-	SW_function(f1_Function_Output);						//SW() function (switch)	
-	f_function(f1_Function_Output, K2, f2_Function_Output);	//f2() function
-	IP_INV_function(f2_Function_Output,IP_Inv_Output);		//IP-1() function
-	return bitset_to_char(IP_Inv_Output,8);					//convert to char the bitset
+	XOR(plaintext,IP_inv_out,8);			 				//CBC algorithm the output of the previous call is used to XOR the plaintext
+	IP_function(plaintext, IP_out);							//IP() initial permutation	
+	f_function(IP_out, K1, f1_out);							//f1() function
+	SW_function(f1_out);									//SW() function (switch)	
+	f_function(f1_out, K2, f2_out);							//f2() function
+	IP_INV_function(f2_out,IP_inv_out);						//IP-1() function
+	return bitset_to_char(IP_inv_out,8);					//convert to char the bitset
 
 }
-unsigned char decrypt(int c){
+unsigned char decrypt(int c)
+{
 	
-	printf("%s\n", "\ndecrypting ....");
 	int ciphertext[8];
 	int_to_bitset(c,ciphertext,8);							//will convert the int value to a bitset
-	IP_function(ciphertext,IP_Output);						//
-	f_function(IP_Output, K2, f2_Function_Output);
-	SW_function(f2_Function_Output);
-	f_function(f2_Function_Output, K1, f1_Function_Output);
-	IP_INV_function(f1_Function_Output,IP_Inv_Output);
-	XOR(IP_Inv_Output,IV, 8);
-	memcpy(IV, ciphertext, sizeof(int) * 8);
-	return bitset_to_char(IP_Inv_Output,8);
+	IP_function(ciphertext,IP_out);							//IP() initial permutation
+	f_function(IP_out, K2, f2_out);							//f2()
+	SW_function(f2_out);									//SW()
+	f_function(f2_out, K1, f1_out);							//f1()
+	IP_INV_function(f1_out,IP_inv_out);						//IP-1()
+	XOR(IP_inv_out,IV, 8);									//applying the CBC algortithm
+	memcpy(IV, ciphertext, sizeof(int) * 8);				//saving the ciphertext for the next call (CBC)	
+	return bitset_to_char(IP_inv_out,8);					//return the char
 }
 
 
-void SW_function(int * input){						//TO-CHECK
+void SW_function(int * input)
+{						
 	int i= 0;
 	for(; i < 4; i++){
 		swap(input, i,i+4);
@@ -131,35 +134,31 @@ void SW_function(int * input){						//TO-CHECK
 }
 
 
-void f_function(int * input, int * sk, int * output)
+void f_function(int * input, int * sk, int * output)		//fk(L, R) = (L XOR F(R, Sk), R)
 {	
-
-	//fK(L, R) = (L XOR F(R, SK), R)
-	//sk some key
-													//let L and R be the left and right 4 bits of input
-	F_mapping(input, sk, 4, F_Mapping_Output);	//F(R, SK)
-	XOR(F_Mapping_Output, input, 4);				//L XOR F(R, SK) 		
+															//let L and R be the left and right 4 bits of input
+	F_mapping(input, sk, 4, F_mapping_out);					//F(R, SK)
+	XOR(F_mapping_out, input, 4);							//L XOR F(R, SK) 		
 	int i;
 	for(i = 0; i < 4; i++)
-		output[i] = F_Mapping_Output[i];
+		output[i] = F_mapping_out[i];
 	for(i = 4; i < 8; i++)
 		output[i] = input[i];
-
 }
 
-void F_mapping(int * input, int * sk, int low, int * output){
-	
+void F_mapping(int * input, int * sk, int low, int * output)	//F() ---> SO() Union S1()  
+{
 
 	int EP_Ouput[8];
 	int i;
-	for(i = 0; i < 8; i++){							//EP() expand and permute and XOR() to LEFT
+	for(i = 0; i < 8; i++){										//EP() expand and permute and XOR() to LEFT
 		EP_Ouput[i] = input[low + EP[i]-1] ^ sk[i];
 	}
-													//S0() and S1() boxes
+																//S0() and S1() boxes
 	S_function(EP_Ouput,0,3,S0,S0_out);
-	S_function(EP_Ouput,4,7,S1,S1_out);				//F() ---> SO() Union S1()  
+	S_function(EP_Ouput,4,7,S1,S1_out);						
 
-													//P4 permutation
+																//P4 permutation
 	output[0] =  S0_out[1];
 	output[1] =  S1_out[1];
 	output[2] =  S1_out[0];
@@ -167,25 +166,23 @@ void F_mapping(int * input, int * sk, int low, int * output){
 
 }
 
-void S_function(int * input,int low, int high, const int S [4][4]  , int * S_out ){
-	int i_arr[] = {input[low], input[high]};
-	int j_arr[] = {input[low+1], input[high-1]};
-	int i = bitset_to_int(i_arr,2);
-	int j = bitset_to_int(j_arr,2);
-	int val = S[i][j];
-	//printf("val: %d\n", val);
-	int_to_bitset(val, S_out, 2);
-
+void S_function(int * input,int low, int high, const int S [4][4],  int * S_out )
+{
+	int i_arr[] = {input[low], input[high]};					//get the i index as bitset
+	int j_arr[] = {input[low+1], input[high-1]};				//get the j index as bitset
+	int i = bitset_to_int(i_arr,2);								//convert them to int value
+	int j = bitset_to_int(j_arr,2);									
+	int val = S[i][j];											//get the S box(i,j) value
+	int_to_bitset(val, S_out, 2);								//convert it to a 2 bits bitset
 }
+
+
 
 
 /*************************************************************
 Utility Functions
 **************************************************************/
 
-
-
-//GOOD
 void int_to_bitset(int value, int * bitset, int N)
 {
 	if(value < 0){
@@ -221,8 +218,6 @@ unsigned char bitset_to_char(int * input, int N)
 	return bitset_to_int(input,8);
 }
 
-
-//GOOD
 void print_array(int * array)
 {
 	int i;
@@ -231,7 +226,7 @@ void print_array(int * array)
 	}
 	printf("\n");
 }
-//GOOD
+
 void swap(int * array, int i , int j)
 {
 	int temp = array[i];
@@ -239,8 +234,6 @@ void swap(int * array, int i , int j)
 	array[j] = temp;
 }	
 
-
-//GOOD
 void left_shift_1(int * bits, int low, int high)
 {
 	int first = bits[low];
@@ -250,7 +243,7 @@ void left_shift_1(int * bits, int low, int high)
 	}
 	bits[--i] = first;
 }
-//GOOD
+
 void left_shift_2(int * bits, int low, int high)
 {
 	left_shift_1(bits,low,high);
